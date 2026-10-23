@@ -1,0 +1,96 @@
+# Qatar4u TV Home: checks every push and pull request, and publishes the APK.
+#
+#   - Theme check: themes/qatar4u has a valid config.json, every app in apps.txt points at a picture that
+#     exists, and every wallpaper stays under 300 KB so it loads quickly on a TV with 1-2 GB of RAM.
+#   - Launcher: unit tests (Umm al-Qura prayer times included), lint and the release build, with a size gate.
+#   - The built APK is kept for 30 days as a workflow artifact, and a tag such as v2.6-q4u.1 also attaches it
+#     to a GitHub Release, so a new version can be installed on the TV without building it yourself.
+name: Qatar4u TV Home
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  theme:
+    name: Qatar4u theme
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: config.json, apps.txt and picture sizes
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          base = "themes/qatar4u"
+          json.load(open(f"{base}/config.json", encoding="utf-8"))
+          pics = {f for f in os.listdir(f"{base}/wallpapers") if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))}
+          errors = []
+          for line in open(f"{base}/wallpapers/apps.txt", encoding="utf-8"):
+              line = line.strip()
+              if not line or line.startswith("#"):
+                  continue
+              pkg, _, pic = line.partition("=")
+              if pic not in pics:
+                  errors.append(f"apps.txt: {pkg} points at missing {pic}")
+          for p in sorted(pics):
+              size = os.path.getsize(f"{base}/wallpapers/{p}")
+              if size > 300 * 1024:
+                  errors.append(f"{p} is {size // 1024} KB, keep wallpapers under 300 KB")
+          print(f"{len(pics)} wallpapers checked")
+          if errors:
+              print("\n".join(errors))
+              sys.exit(1)
+          PY
+
+  launcher:
+    name: Launcher tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests, lint and release build
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease
+      - name: Size gate (512 KB)
+        run: |
+          size=$(stat -c %s launcher/app/build/outputs/apk/release/app-release.apk)
+          echo "release APK: $((size / 1024)) KB"
+          test "$size" -lt 524288 || { echo "APK is over 512 KB; keep the launcher light for the TV"; exit 1; }
+      - name: Name the APK
+        run: cp launcher/app/build/outputs/apk/release/app-release.apk Qatar4u-TV-Home.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Qatar4u-TV-Home
+          path: Qatar4u-TV-Home.apk
+          retention-days: 30
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [theme, launcher]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Qatar4u-TV-Home
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: Qatar4u-TV-Home.apk
+          generate_release_notes: true

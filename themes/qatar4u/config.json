@@ -1,0 +1,7 @@
+{
+  "wallpaper": true,
+  "wallpaper_rotation_minutes": 60,
+  "wallpaper_order": "sequential",
+  "dock_opacity": 80,
+  "background_color": "#000000"
+}

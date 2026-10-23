@@ -1,0 +1,10 @@
+com.google.android.youtube.tv=02-west-bay-skyline.jpg
+com.netflix.ninja=08-lusail-stadium.jpg
+net.mbc.shahidTV=04-souq-waqif.jpg
+org.videolan.vlc=07-corniche-dhows.jpg
+com.iqiyi.i18n.tv=03-aspire-torch.jpg
+com.sheikh.live=09-katara.jpg
+com.tcl.browser=06-khor-al-adaid.jpg
+com.esaba.downloader=05-zubarah-fort.jpg
+com.android.vending=10-dukhan-coast.jpg
+com.android.tv.settings=01-museum-islamic-art.jpg
