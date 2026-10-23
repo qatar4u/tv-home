@@ -1,0 +1,18 @@
+{
+  "wallpaper": true,
+  "wallpaper_rotation_minutes": 30,
+  "wallpaper_order": "sequential",
+  "wallpaper_true_color": true,
+  "background_color": "#04040b",
+  "dock_opacity": 55,
+  "dock_glass": true,
+  "app_glow": true,
+  "dock_apps": [
+    "com.google.android.youtube",
+    "com.netflix.mediaclient",
+    "net.mbc.shahid",
+    "com.osn.go",
+    "com.parsifal.starz",
+    "org.videolan.vlc"
+  ]
+}
